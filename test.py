@@ -56,7 +56,7 @@ class ParserText(ParserStrict):
             raise ValueError('expects atom')
         if data not in ('reference','value','user'):
             raise ValueError('unknown text value')
-        return Sexpression(None,data)
+        return Sexp(None,data)
 
     _pos1_parse = parseAtom # Second atom to be text content
 
@@ -99,7 +99,7 @@ class ParserModule(ParserStrict):
     # sub keys for that key we want for SexpList. Those sub keys can themselves
     # be a tuple.
     #
-    # You can create arbitary complex defaults, by using Sexpression directly
+    # You can create arbitary complex defaults, by using Sexp directly
     # as the default value(s). See the extreme example below. In most cases,
     # you'll be better off writing a subclass(es) to take care of its own
     # defaults
@@ -109,12 +109,12 @@ class ParserModule(ParserStrict):
         'fp_circle',\
         'fp_arc',\
         ('fp_text',\
-            ((Sexpression('fp_extra'),\
-                Sexpression('fp_extra2')))),\
-        (Sexpression('extra'), \
-                (Sexpression('child1'),Sexpression('grandchild'),'c2'),\
+            ((Sexp('fp_extra'),\
+                Sexp('fp_extra2')))),\
+        (Sexp('extra'), \
+                (Sexp('child1'),Sexp('grandchild'),'c2'),\
                 'child2',\
-                Sexpression('child3',[1,3,4]))
+                Sexp('child3',[1,3,4]))
     
     def __init__(self,data):
         super(ParserModule,self).__init__(data)

@@ -9,7 +9,7 @@ the form of ::
     [ <line number>, <key>, <value>... ]
 
 where there may be none or multiple ``<values>`` of either an atom or another
-list based S-Expression. The class `Sexpression` is top class for objects
+list based S-Expression. The class `Sexp` is top class for objects
 representing a parsed expresion
 
 function `parseSexp()` can be used to convert plain text form S-Expression into
@@ -49,7 +49,7 @@ class SexpValueDict(OrderedDict):
         '''Add an S-Expression value
             
             Args:
-                sexp (`Sexpression`): S-Expression value to be added
+                sexp (`Sexp`): S-Expression value to be added
                 action (int): action to take when an storing an S-Expression
                               Acceptable values are,
                               
@@ -64,8 +64,8 @@ class SexpValueDict(OrderedDict):
             keyed by its position, kinda like positional based command line
             options
         '''
-        if not isinstance(sexp,Sexpression):
-            raise TypeError('expects type Sexpression')
+        if not isinstance(sexp,Sexp):
+            raise TypeError('expects type Sexp')
 
         if sexp._key is None:
             sexp._key = self._idx
@@ -97,7 +97,7 @@ class SexpValueDict(OrderedDict):
         return str(self.keys())
 
 
-class Sexpression(object):
+class Sexp(object):
     '''Generic class to represent a S-Expression
 
         Attributes:
@@ -132,8 +132,8 @@ class Sexpression(object):
         return self._value
 
     def __setitem__(self,key,value):
-        if not isinstance(value,Sexpression):
-            self._value.add(Sexpression(key,value))
+        if not isinstance(value,Sexp):
+            self._value.add(Sexp(key,value))
         elif value._key != key:
             raise KeyError('key mismatch')
         else:
@@ -163,7 +163,7 @@ class Sexpression(object):
 
     def __setattr__(self,name,value):
         if name.startswith('_'):
-            super(Sexpression,self).__setattr__(name,value)
+            super(Sexp,self).__setattr__(name,value)
             return
         try:
             return self.__setitem__(name,value)
@@ -227,7 +227,7 @@ class Sexpression(object):
         '''Add default values
             
             Arg:
-                defs (string|Sexpression|tuple)
+                defs (string|Sexp|tuple)
 
             Retruns: the value with the first key in ``defs``.
 
@@ -240,9 +240,9 @@ class Sexpression(object):
             one child. This makes it easy to traverse the object model without
             constant need of sanity checking.
 
-            Each element inside ``defs`` can instead be a Sexpression, which
+            Each element inside ``defs`` can instead be a Sexp, which
             means that if the corresponding key is missing, the given
-            Sexpression will be added.
+            Sexp will be added.
 
         '''
         if isinstance(defs,(list,tuple)):
@@ -255,8 +255,8 @@ class Sexpression(object):
 
         if isinstance(defs,basestring):
             defs = SexpList([],defs)
-        elif not isinstance(defs,Sexpression):
-            raise TypeError('expects type basestring|Sexpression')
+        elif not isinstance(defs,Sexp):
+            raise TypeError('expects type basestring|Sexp')
         try:
             v = self._value[defs._key]
         except: 
@@ -279,7 +279,7 @@ class Sexpression(object):
         return ret
 
 
-class SexpList(Sexpression):
+class SexpList(Sexp):
     '''Used to contain a list of expression with the same key
 
         When exporting, it will not export its own key, but export all of its
@@ -291,10 +291,10 @@ class SexpList(Sexpression):
     def __init__(self,value=None,key=None):
         if value is None:
             value = []
-        elif isinstance(value,Sexpression):
+        elif isinstance(value,Sexp):
             value = [value]
         elif not isinstance(value,list):
-            raise TypeError('expects type Sexpression|list')
+            raise TypeError('expects type Sexp|list')
 
         if key is None:
             if len(value):
@@ -315,7 +315,7 @@ class SexpList(Sexpression):
     def _append(self,sexp):
         if isinstance(sexp,SexpList):
             sexp = sexp._value
-        elif isinstance(sexp,Sexpression):
+        elif isinstance(sexp,Sexp):
             if sexp._key != self._key:
                 raise KeyError('expceting key {}'.format(self._key))
             self._value.append(sexp)
@@ -328,7 +328,7 @@ class SexpList(Sexpression):
             self._append(v)
         
 
-class SexpParser(Sexpression):
+class SexpParser(Sexp):
     """Basic parser class
 
         The parser expects input data to be a python ``list`` representation of
@@ -460,7 +460,7 @@ class SexpParser(Sexpression):
         '''Called by `__init__()` to add each individual parsed value
 
             Args:
-                sexp (`Sexpression`): parsed result
+                sexp (`Sexp`): parsed result
                 action: See `SexpValueDict.add()` for possible values
         '''
         self._value.add(sexp,action)
@@ -476,7 +476,7 @@ class SexpParser(Sexpression):
         return parseDefault(self,value)
 
 
-class SexpBool(Sexpression):
+class SexpBool(Sexp):
     '''Parser for parsing boolean type value
 
         The constructor treat the following string value as ``True`` :: 
@@ -540,7 +540,7 @@ class SexpBool(Sexpression):
         return self._value
 
 
-class SexpDefaultTrue(Sexpression):
+class SexpDefaultTrue(Sexp):
     '''Converts an un-named value to a named value of boolean value ``True``
         
         For an expression such as ``drill(oval 1 2)``, `oval` is normally
@@ -588,7 +588,7 @@ def parseDefault(obj,sexp):
         Arg:
             sexp: the value for parsing
 
-        Returns an Sexpression object for `SexpParser` to store the value
+        Returns an Sexp object for `SexpParser` to store the value
 
         This function will try to guess the value format by trying type
         conversion of ``int, float and SexpBool. It will use `SexpParser` to
@@ -598,12 +598,12 @@ def parseDefault(obj,sexp):
 
     if isinstance(sexp,basestring):
         try:
-            return Sexpression(None,int(sexp));
+            return Sexp(None,int(sexp));
         except: pass
         try:
-            return Sexpression(None,float(sexp));
+            return Sexp(None,float(sexp));
         except: pass
-        return Sexpression(None,sexp)
+        return Sexp(None,sexp)
 
     try:
         return SexpBool(self,sexp)
@@ -628,7 +628,7 @@ def parseDefault(obj,sexp):
         value = None
     elif len(value)==1:
         value = value[0]
-    return Sexpression(sexp[1],value)
+    return Sexp(sexp[1],value)
             
 
 def parseNone(obj,sexp):
@@ -640,7 +640,7 @@ def parseAtom(obj,sexp,ftype=None):
         raise ValueError('expects an atom')
     if ftype is not None:
         sexp = ftype(sexp)
-    return Sexpression(None,sexp)
+    return Sexp(None,sexp)
 
 def parseAtomInt(obj,sexp):
     return parseAtom(obj,sexp,int)
@@ -654,9 +654,9 @@ def parseCopy(obj,sexp,checkLen,ftype=None):
     if len(sexp)!=checkLen+2:
         raise ValueError('len={}, expects {}'.format(len(sexp),checkLen+2))
     if ftype is None:
-        return Sexpression(sexp[1],sexp[2:])
+        return Sexp(sexp[1],sexp[2:])
     else:  
-        return Sexpression(sexp[1],[ftype(v) for v in sexp[2:]])
+        return Sexp(sexp[1],[ftype(v) for v in sexp[2:]])
 
 def parseCopy1(obj,sexp):
     return parseCopy(obj,sexp,1)
@@ -740,8 +740,8 @@ def parseSexp(sexp):
     return out[0]
 
 def exportSexp(sexp, out, prefix='', indent='  '):
-    if not isinstance(sexp,Sexpression):
-        sexp = Sexpression(None,sexp)
+    if not isinstance(sexp,Sexp):
+        sexp = Sexp(None,sexp)
 
     if isinstance(out,basestring):
         with open(out,'w') as f:

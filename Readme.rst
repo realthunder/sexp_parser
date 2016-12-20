@@ -20,7 +20,7 @@ conventional S-Expression is only here for debugging purpose
 function `parseSexp()` can be used to convert plain text form S-Expression into
 the list-based representation
 
-The class `Sexpression` is the top class for objects representing a parsed
+The class `Sexp` is the top class for objects representing a parsed
 expression.
 
 If you only need a non-semantic-checking parser, you can use `SexpParser` as
