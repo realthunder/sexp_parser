@@ -51,10 +51,10 @@ class ParserEffects(ParserStrict):
 
 class ParserText(ParserStrict):
 
-    def _pos0_parse(self,data): # Expects either 'reference' or 'value'
+    def _pos0_parse(self,data): # Posible values: 'reference','value','user'
         if not isinstance(data,basestring):
             raise ValueError('expects atom')
-        if data!='reference' and data!='value':
+        if data not in ('reference','value','user'):
             raise ValueError('unknown text value')
         return Sexpression(None,data)
 
@@ -75,6 +75,10 @@ class ParserLine(ParserStrict):
     _parse1_end = parseFloat2
     _parse1_layer = parseCopy1
     _parse1_width = parseFloat1
+    
+    # Setup default values. You can either set the defaults in the sub-parser
+    # here, Or set it at the parent parsers using tuples. See ParserModule._defaults
+    _defaults = 'sub_line'
 
 class ParserModule(ParserStrict):
     _pos0_parse = parseAtom # first value to be an atom
@@ -86,9 +90,35 @@ class ParserModule(ParserStrict):
     _parse_pad = SexpParser # Feel lazy? Don't check pad expression?
                             # Just let SexpParser handle the rest
 
+
+    # Setup default values. Text entry means we want that key to be a SexpList
+    # even if there is none, or only one instance. 
+    #
+    # If The entry is a tuple, then The first element of the tuple specifies
+    # the key we want for a SexpList default.  The rest elements specifies the
+    # sub keys for that key we want for SexpList. Those sub keys can themselves
+    # be a tuple.
+    #
+    # You can create arbitary complex defaults, by using Sexpression directly
+    # as the default value(s). See the extreme example below. In most cases,
+    # you'll be better off writing a subclass(es) to take care of its own
+    # defaults
+    _defaults = \
+        'pad',\
+        'fp_line',\
+        'fp_circle',\
+        'fp_arc',\
+        ('fp_text',\
+            ((Sexpression('fp_extra'),\
+                Sexpression('fp_extra2')))),\
+        (Sexpression('extra'), \
+                (Sexpression('child1'),Sexpression('grandchild'),'c2'),\
+                'child2',\
+                Sexpression('child3',[1,3,4]))
+    
     def __init__(self,data):
         super(ParserModule,self).__init__(data)
-        if self._key != 'module':
+        if self._key != 'module': # check the root key
             raise TypeError('invalid header: {}'.format(self._key))
 
     @staticmethod
@@ -110,5 +140,15 @@ if args.filename:
     module = ParserModule.load(args.filename[0])
 else:
     module = ParserModule(parseSexp(test_data))
+
+for e in getSexpError(module):
+    print(e)
+
+print('\nkeys: ')
+for k in module:
+    print('\t{}: {}'.format(k,module[k]))
+
+print('\n')
+exportSexp(module,sys.stdout)
 
 

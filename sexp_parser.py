@@ -95,7 +95,7 @@ class SexpValueDict(OrderedDict):
 
     def __str__(self):
         return str(self.keys())
-        
+
 
 class Sexpression(object):
     '''Generic class to represent a S-Expression
@@ -114,21 +114,22 @@ class Sexpression(object):
     '''
     __slots__ = '_key','_value'
 
-    def __init__(self,key,value):
+    def __init__(self,key,value=None):
         self._key = key
-        self._value = value
+        self._value = SexpValueDict() if value is None else value 
 
     def __len__(self):
         return len(self._value)
 
     def __getitem__(self,key):
         v = self._value[key]
-        if hasattr(v,'__get__'):
-            return v.__get__(self,self.__class__)
-        elif isinstance(v,Sexpression) and \
-            not hasattr(v._value,'__getitem__'):
-            return v._value
-        return v
+        p = getattr(v,'__get__',None)
+        return v if p is None else p(self,self.__class__)
+
+    def __get__(self,instance,owner):
+        if isinstance(self._value,dict):
+            return self
+        return self._value
 
     def __setitem__(self,key,value):
         if not isinstance(value,Sexpression):
@@ -222,6 +223,61 @@ class Sexpression(object):
         else:
             out.write(' {}'.format(value))
 
+    def _addDefaults(self,defs):
+        '''Add default values
+            
+            Arg:
+                defs (string|Sexpression|tuple)
+
+            Retruns: the value with the first key in ``defs``.
+
+            ``defs`` maybe a string or a tuple of strings. The first string
+            specifies the key of the default value. The following strings
+            defines the keys of the sub values. The following strings can be
+            tuples, too, for recursive setting of the default value. The string
+            specifies that if the corresponding key is missing or has only one
+            insance, it will be converted to a ``SexpList`` of either zero or
+            one child. This makes it easy to traverse the object model without
+            constant need of sanity checking.
+
+            Each element inside ``defs`` can instead be a Sexpression, which
+            means that if the corresponding key is missing, the given
+            Sexpression will be added.
+
+        '''
+        if isinstance(defs,(list,tuple)):
+            if not len(defs): return
+            v = SexpList(self._addDefaults(defs[0]))
+            for d in defs[1:]:
+                for l in v:
+                    l._addDefaults(d)
+            return
+
+        if isinstance(defs,basestring):
+            defs = SexpList([],defs)
+        elif not isinstance(defs,Sexpression):
+            raise TypeError('expects type basestring|Sexpression')
+        try:
+            v = self._value[defs._key]
+        except: 
+            self._value[defs._key] = defs
+            return defs
+
+        if isinstance(defs,SexpList) and not isinstance(v,SexpList):
+            v = self._value[defs._key] = SexpList(v)
+        return v
+
+    def _getError(self):
+        '''Returns a list of errors'''
+        ret = []
+        for v in (self._value if isinstance(self._value,list) \
+                else self._value.values()):
+            try:
+                ret += v._getError()
+            except: pass
+        ret += getattr(self,'_err',[])
+        return ret
+
 
 class SexpList(Sexpression):
     '''Used to contain a list of expression with the same key
@@ -232,9 +288,10 @@ class SexpList(Sexpression):
 
     __slots__ = ()
 
-    def __init__(self,value=[]):
-        key = None
-        if isinstance(value,Sexpression):
+    def __init__(self,value=None,key=None):
+        if value is None:
+            value = []
+        elif isinstance(value,Sexpression):
             value = [value]
         elif not isinstance(value,list):
             raise TypeError('expects type Sexpression|list')
@@ -251,6 +308,9 @@ class SexpList(Sexpression):
 
     def __str__(self):
         return '<list>:{}'.format(len(self._value))
+
+    def __get__(self,instance,owner):
+        return self
 
     def _append(self,sexp):
         if isinstance(sexp,SexpList):
@@ -324,9 +384,13 @@ class SexpParser(Sexpression):
 
             Lower level parser can bypass result storage by not returning
             anything, and perform its own storage
+
+            After parsing is done, it will insert default bool (in
+            ``_default_bools``) values and default values (in ``_defaults``)
+            values if they are missing.
         '''
 
-        super(SexpParser,self).__init__(data[1],SexpValueDict())
+        super(SexpParser,self).__init__(data[1])
 
         self._err = []
 
@@ -388,17 +452,9 @@ class SexpParser(Sexpression):
             if k not in self._value:
                 self._value[k] = SexpDefaultTrue(k,False)
 
-    def _getError(self):
-        '''Returns a list of errors'''
-        ret = []
-        for v in iter(self._value):
-            try:
-                p = getattr(v,'_getError',None)
-                if p is None: continue
-                r += p()
-            except: pass
-        ret += self._err
-        return ret
+        defs = getattr(self,'_defaults',[])
+        for d in (defs if isinstance(defs,(tuple,list)) else (defs,)):
+            self._addDefaults(d)
 
     def _addValue(self,sexp,action):
         '''Called by `__init__()` to add each individual parsed value
