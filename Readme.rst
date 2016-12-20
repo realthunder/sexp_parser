@@ -25,7 +25,7 @@ expression.
 
 If you only need a non-semantic-checking parser, you can use `SexpParser` as
 it is.  For the usage of the object model produced by `SexpParser`, see the
-project `here <http://github.com/realthunder/kicad_parser`_.
+project `here <http://github.com/realthunder/kicad_parser>`_.
 
 To consturct a semantic checking parser, see the sample code `here <test.py>`_. 
 More details can be found in the code document `here <sexp_parser.py>`_
