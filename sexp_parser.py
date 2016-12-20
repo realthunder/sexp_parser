@@ -77,7 +77,7 @@ class SexpValueDict(OrderedDict):
 
         if sexp._key not in self:
             if action==2:
-                sexp = SexpList(sexp._key,[sexp])
+                sexp = SexpList([sexp])
             self[sexp._key] = sexp
             return
 
@@ -91,7 +91,7 @@ class SexpValueDict(OrderedDict):
         if isinstance(v,SexpList):
             v._append(sexp)
             return
-        self[sexp._key] = SexpList(sexp._key,[v,sexp])
+        self[sexp._key] = SexpList([v,sexp])
 
     def __str__(self):
         return str(self.keys())
@@ -232,9 +232,18 @@ class SexpList(Sexpression):
 
     __slots__ = ()
 
-    def __init__(self,key,*args):
+    def __init__(self,value=[]):
+        key = None
+        if isinstance(value,Sexpression):
+            value = [value]
+        elif not isinstance(value,list):
+            raise TypeError('expects type Sexpression|list')
+
+        if key is None:
+            if len(value):
+                key = value[0]._key
         super(SexpList,self).__init__(key,[])
-        self._append(list(*args))
+        self._append(value)
 
     def _export(self,out,prefix='',indent='  '):
         for v in self._value:
