@@ -112,9 +112,10 @@ class Sexp(object):
         Non-underscored attributes are reserved for accessing named values (i.e.
         sub S-Expressions)
     '''
-    __slots__ = '_key','_value'
+    __slots__ = '_key','_value','_line'
 
-    def __init__(self,key,value=None):
+    def __init__(self,key,value=None,line=-1):
+        self._line = line
         self._key = key
         self._value = SexpValueDict() if value is None else value 
 
@@ -135,7 +136,7 @@ class Sexp(object):
         if not isinstance(value,Sexp):
             self._value.add(Sexp(key,value))
         elif value._key != key:
-            raise KeyError('key mismatch')
+            raise KeyError('{}: key mismatch'.format(self._line))
         else:
             self._value.add(value)
 
@@ -150,7 +151,7 @@ class Sexp(object):
             if not name.startswith('_'): 
                 return self.__getitem__(name)
         except KeyError: pass
-        raise AttributeError
+        raise AttributeError('{}: key "{}" not found'.format(self._line,name))
 
     def __delattr__(self,name):
         if name.startswith('_'): 
@@ -159,7 +160,7 @@ class Sexp(object):
         try:
             return self.__delitem__(name)
         except KeyError:
-            raise AttributeError
+            raise AttributeError('{}: key "{}" not found'.format(self._line,name))
 
     def __setattr__(self,name,value):
         if name.startswith('_'):
@@ -168,7 +169,7 @@ class Sexp(object):
         try:
             return self.__setitem__(name,value)
         except KeyError:
-            raise AttributeError
+            raise AttributeError('{}: key "{}" not found'.format(self._line,name))
 
     def __iter__(self):
         for v in iter(self._value):
@@ -390,7 +391,7 @@ class SexpParser(Sexp):
             values if they are missing.
         '''
 
-        super(SexpParser,self).__init__(data[1])
+        super(SexpParser,self).__init__(data[1],None,data[0])
 
         self._err = []
 
@@ -498,16 +499,18 @@ class SexpBool(Sexp):
         if isinstance(data,basestring):
             key = None
             value = data
+            line = -1
         elif not isinstance(data,list) or len(data)!=3:
             raise ValueError('invalid boolean expression')
         else:
             key = data[1]
             value = data[2]
+            line = data[0]
 
         if value not in _yes_values and \
             value not in _no_values:
             raise ValueError('invalid boolean value')
-        super(SexpBool,self).__init__(key,value)
+        super(SexpBool,self).__init__(key,value,line)
 
     def __nonzero__(self):
         return self._value in _yes_values
@@ -725,7 +728,7 @@ def parseSexp(sexp):
         else:
             if not out: 
                 # insert line number as the first element
-                out.append(bisect.bisect_right(lines,termtypes.start()))
+                out.append(bisect.bisect_right(lines,termtypes.start())+1)
             if term == 'q': # quoted string
                 # out.append(value[1:-1]) # strip quotes
                 out.append(value) # do not strip quotes
