@@ -127,6 +127,9 @@ class Sexp(object):
         p = getattr(v,'__get__',None)
         return v if p is None else p(self,self.__class__)
 
+    def _get(self,key):
+        return self._value[key]
+
     def __get__(self,instance,owner):
         if isinstance(self._value,dict):
             return self
