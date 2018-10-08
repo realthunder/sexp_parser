@@ -17,6 +17,7 @@ the list-based representation
 
 '''
 
+import sys
 import re
 import logging
 import traceback
@@ -29,6 +30,12 @@ __license__ = "MIT"
 __version__ = "1.0.0"
 __email__ = "realthunder.dev@gmail.com"
 __status__ = "Prototype"
+
+PY3 = sys.version_info[0] == 3
+if PY3:
+    string_types = str,
+else:
+    string_types = basestring,
 
 logger = logging.getLogger(__name__)
 
@@ -117,10 +124,13 @@ class Sexp(object):
     def __init__(self,key,value=None,line=-1):
         self._line = line
         self._key = key
-        self._value = SexpValueDict() if value is None else value 
+        self._value = SexpValueDict() if value is None else value
 
     def __len__(self):
-        return len(self._value)
+        try:
+            return len(self._value)
+        except Exception:
+            return 0
 
     def __getitem__(self,key):
         v = self._value[key]
@@ -151,13 +161,14 @@ class Sexp(object):
 
     def __getattr__(self,name):
         try:
-            if not name.startswith('_'): 
+            if not name.startswith('_'):
                 return self.__getitem__(name)
-        except KeyError: pass
+        except KeyError:
+            pass
         raise AttributeError('{}: key "{}" not found'.format(self._line,name))
 
     def __delattr__(self,name):
-        if name.startswith('_'): 
+        if name.startswith('_'):
             delattr(self,name)
             return
         try:
@@ -190,7 +201,7 @@ class Sexp(object):
             out.write(' {}'.format(self._key))
             return
 
-        export_key_ = isinstance(self._key,basestring)
+        export_key_ = isinstance(self._key,string_types)
         if export_key_:
             out.write('\n{}({}'.format(prefix,self._key))
             prefix += indent
@@ -199,7 +210,7 @@ class Sexp(object):
             p = getattr(self._value,'_export',None)
             if p is not None:
                 p(out,prefix,indent)
-            elif isinstance(self._value,basestring) or \
+            elif isinstance(self._value,string_types) or \
                     not hasattr(self._value,'__iter__'):
                 out.write(' {}'.format(self._value))
             else:
@@ -257,10 +268,10 @@ class Sexp(object):
                     l._addDefaults(d)
             return
 
-        if isinstance(defs,basestring):
+        if isinstance(defs,string_types):
             defs = SexpList([],defs)
         elif not isinstance(defs,Sexp):
-            raise TypeError('expects type basestring|Sexp')
+            raise TypeError('expects type string|Sexp')
         try:
             v = self._value[defs._key]
         except: 
@@ -401,7 +412,7 @@ class SexpParser(Sexp):
         bools = getattr(self,'_default_bools',None)
         if bools is None:
             bools = []
-        elif isinstance(bools,basestring):
+        elif isinstance(bools,string_types):
             bools = [bools]
         elif not isinstance(bools,set):
             bools = set(bools)
@@ -445,7 +456,7 @@ class SexpParser(Sexp):
                     self._addValue(ret,action)
 
             except Exception as e:
-                if isinstance(entry,basestring):
+                if isinstance(entry,string_types):
                     self._err.append((str(e),entry,data))
                 else:
                     self._err.append((str(e),entry))
@@ -499,7 +510,7 @@ class SexpBool(Sexp):
     _no_values = ['no','No','False','false']
 
     def __init__(self,data):
-        if isinstance(data,basestring):
+        if isinstance(data,string_types):
             key = None
             value = data
             line = -1
@@ -510,13 +521,13 @@ class SexpBool(Sexp):
             value = data[2]
             line = data[0]
 
-        if value not in _yes_values and \
-            value not in _no_values:
+        if value not in SexpBool._yes_values and \
+           value not in SexpBool._no_values:
             raise ValueError('invalid boolean value')
         super(SexpBool,self).__init__(key,value,line)
 
     def __nonzero__(self):
-        return self._value in _yes_values
+        return self._value in SexpBool._yes_values
 
     def __bool__(self):
         return self.__nonzero__()
@@ -526,14 +537,14 @@ class SexpBool(Sexp):
 
     def _toggle(self):
         if bool(self):
-            self._value = _no_values[_yes_values.index(self._value)]
+            self._value = SexpBool._no_values[SexpBool._yes_values.index(self._value)]
         else:
-            self._value = _yes_values[_no_values.index(self._value)]
+            self._value = SexpBool._yes_values[SexpBool._no_values.index(self._value)]
 
     def __set__(self,instance,value):
-        if isinstance(value,basestring):
-            if value not in _yes_values and \
-                value not in _no_values:
+        if isinstance(value,string_types):
+            if value not in SexpBool._yes_values and \
+                value not in SexpBool._no_values:
                 raise ValueError('invalid boolean value')
             self._value = value
         elif bool(value) != bool(self):
@@ -562,7 +573,7 @@ class SexpDefaultTrue(Sexp):
     __slots__ = ()
 
     def __init__(self,data,value=True):
-        if not isinstance(data,basestring):
+        if not isinstance(data,string_types):
             raise ValueError('invalid boolean data')
         super(SexpDefaultTrue,self).__init__(data,value)
 
@@ -602,7 +613,7 @@ def parseDefault(obj,sexp):
         element inside ``sexp``
     '''
 
-    if isinstance(sexp,basestring):
+    if isinstance(sexp,string_types):
         try:
             return Sexp(None,int(sexp));
         except: pass
@@ -612,8 +623,9 @@ def parseDefault(obj,sexp):
         return Sexp(None,sexp)
 
     try:
-        return SexpBool(self,sexp)
-    except: pass
+        return SexpBool(sexp)
+    except: 
+        pass
 
     if len(sexp) < 2:
         raise ValueError('no key')
@@ -642,7 +654,7 @@ def parseNone(obj,sexp):
     pass
 
 def parseAtom(obj,sexp,ftype=None):
-    if not isinstance(sexp,basestring):
+    if not isinstance(sexp,string_types):
         raise ValueError('expects an atom')
     if ftype is not None:
         sexp = ftype(sexp)
@@ -706,7 +718,7 @@ def parseSexp(sexp):
     # Pre-process data to get index position of each line end
     lines = []
     count = 0
-    if isinstance(sexp,basestring):
+    if isinstance(sexp,string_types):
         sexp = sexp.splitlines(False)
     for l in iter(sexp):
         count += len(l)
@@ -716,11 +728,11 @@ def parseSexp(sexp):
     stack = []
     out = []
     if logger.isEnabledFor(logging.DEBUG):
-    	logger.debug("%-6s %-14s %-44s %-s" % tuple("term value out stack".split()))
+        logger.debug("%-6s %-14s %-44s %-s" % tuple("term value out stack".split()))
     for termtypes in re.finditer(parseSexp.regex, sexp):
         term, value = [(t,v) for t,v in termtypes.groupdict().items() if v][0]
-    	if logger.isEnabledFor(logging.DEBUG):
-	    logging.debug("%-7s %-14s %-44r %-r" % (term, value, out, stack))
+        if logger.isEnabledFor(logging.DEBUG):
+            logging.debug("%-7s %-14s %-44r %-r" % (term, value, out, stack))
         if   term == 'l': # left bracket
             stack.append(out)
             out = []
@@ -738,7 +750,7 @@ def parseSexp(sexp):
             elif term == 's': # simple string
                 out.append(value)
             else:
-                raise NotImplementedError("Error: %r" % (term, value))
+                raise NotImplementedError('Error: {}, {}'.format(term, value))
 
     assert not stack, "Trouble with nesting of brackets"
 
@@ -749,7 +761,7 @@ def exportSexp(sexp, out, prefix='', indent='  '):
     if not isinstance(sexp,Sexp):
         sexp = Sexp(None,sexp)
 
-    if isinstance(out,basestring):
+    if isinstance(out,string_types):
         with open(out,'w') as f:
             sexp._export(f,prefix,indent)
     else:

@@ -1,1 +1,1 @@
-from sexp_parser import *
+from .sexp_parser import *
