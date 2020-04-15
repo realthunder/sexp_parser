@@ -594,7 +594,7 @@ class SexpDefaultTrue(Sexp):
         self._value = bool(value)
 
     def __get__(self,instance,owner):
-        return bool(self)
+        return bool(self._value)
 
 ######################################################################################
 # Parser helper functions
