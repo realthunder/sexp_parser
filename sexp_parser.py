@@ -467,6 +467,20 @@ class SexpParser(Sexp):
             if k not in self._value:
                 self._value[k] = SexpDefaultTrue(k,False)
 
+        for alias, key in getattr(self, '_alias_keys', {}).items():
+            va = self._value.get(alias, None)
+            if not va:
+                continue
+            v = self._value.get(key, None)
+            if not v:
+                self._value[key] = va
+            elif isinstance(v,SexpList):
+                v._append(va)
+            else:
+                v = SexpList([v])
+                v._append(v)
+                self._value[key] = v
+
         defs = getattr(self,'_defaults',[])
         for d in (defs if isinstance(defs,(tuple,list)) else (defs,)):
             self._addDefaults(d)
