@@ -10,7 +10,7 @@ the form of ::
 
 where there may be none or multiple ``<values>`` of either an atom or another
 list based S-Expression. The class `Sexp` is top class for objects
-representing a parsed expresion
+representing a parsed expression
 
 function `parseSexp()` can be used to convert plain text form S-Expression into
 the list-based representation
@@ -193,7 +193,7 @@ class Sexp(object):
         '''Export self to an S-epression and write to output stream
             Args: 
                 out: output stream, only needs to implement ``out.write(string)``
-                prefix(string): prefixing spaces for output formating 
+                prefix(string): prefixing spaces for output formatting 
                 indent(string): incremental prefix for sub levels
         '''
 
@@ -227,7 +227,7 @@ class Sexp(object):
             out.write(')')
 
     def _exportValue(self,out,value,prefix,indent):
-        '''Called by `_export()` to export each indivdual value
+        '''Called by `_export()` to export each individual value
 
             It tries ``value._export()`` before fallback to str(value) Subclass
             can override this method to customize the behavior
@@ -244,14 +244,14 @@ class Sexp(object):
             Arg:
                 defs (string|Sexp|tuple)
 
-            Retruns: the value with the first key in ``defs``.
+            Returns: the value with the first key in ``defs``.
 
             ``defs`` maybe a string or a tuple of strings. The first string
             specifies the key of the default value. The following strings
             defines the keys of the sub values. The following strings can be
             tuples, too, for recursive setting of the default value. The string
             specifies that if the corresponding key is missing or has only one
-            insance, it will be converted to a ``SexpList`` of either zero or
+            instance, it will be converted to a ``SexpList`` of either zero or
             one child. This makes it easy to traverse the object model without
             constant need of sanity checking.
 
@@ -376,13 +376,13 @@ class SexpParser(Sexp):
             `SexpValueDict`
 
             The constructor will dispatch keyword parsing to lower level
-            parsers grouped by ``self`` here. User impelements semantic check
+            parsers grouped by ``self`` here. User implements semantic check
             by subclassing this class, and provides, for each sub-keys, a
             sub-parser as callable attributes. The search is done in the
             following order,
 
             * Sub-parsers named as ``_pos<index>`` are called to handle
-              positional based expression, ``<index>`` is the occurance index of
+              positional based expression, ``<index>`` is the occurrence index of
               this sub-expression inside the parent expression
 
             * Sub-parses named as ``_parse1_<subkey>`` demand that the
@@ -515,7 +515,7 @@ class SexpBool(Sexp):
             'no', 'No', 'false', 'False'
 
         The actual text representation is stored in ``_value``, and boolean
-        value is computed at runtime by checking agains the ``_yes_values``
+        value is computed at runtime by checking against the ``_yes_values``
     '''
 
     __slots__ = ()
@@ -681,7 +681,7 @@ def parseAtomFloat(obj,sexp):
     return parseAtom(obj,sexp,float)
 
 def parseCopy(obj,sexp,checkLen,ftype=None):
-    """Returns the value and check the length, optionally conver to another
+    """Returns the value and check the length, optionally convert to another
     type"""
     if len(sexp)!=checkLen+2:
         raise ValueError('len={}, expects {}'.format(len(sexp),checkLen+2))
