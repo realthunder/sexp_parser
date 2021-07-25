@@ -4,7 +4,7 @@ Python S-Expression Object Model
 
 There are many variants of `S-Expression <https://en.wikipedia.org/wiki/S-expression>`_.  
 This module here only deals with the *prefix notation*, where the first element
-of an expression is expected to be an operator, which is refered to as the
+of an expression is expected to be an operator, which is referred to as the
 ``<key>`` in this module. The module provides a parser `SexpParser` that
 coverts a python list-based expression into a python object model. Each
 expression in the list-based S-Expression representation is defined as a
@@ -27,5 +27,5 @@ If you only need a non-semantic-checking parser, you can use `SexpParser` as
 it is.  For the usage of the object model produced by `SexpParser`, see the
 project `here <http://github.com/realthunder/kicad_parser>`_.
 
-To consturct a semantic checking parser, see the sample code `here <test.py>`_. 
+To construct a semantic checking parser, see the sample code `here <test.py>`_. 
 More details can be found in the code document `here <sexp_parser.py>`_

@@ -25,7 +25,7 @@ test_data = \
     (effects (font (size 1.2 1.2) (thickness 0.15)))
   )
   (fp_text oops DIP-16_0 (at 0 0) (layer F.Fab)
-    (effects (font (size 1.2 1.2 opps) (thickness 0.15)))
+    (effects (font (size 1.2 1.2 oops) (thickness 0.15)))
   )
   (fp_line_opps (start -9.94 7.399999) (end 9.94 7.4) (layer F.SilkS) (width 0.15))
   (fp_line (start 9.94 7.4) (end 9.94 -7.399999) (layer F.SilkS) (width 0.15))
@@ -51,7 +51,7 @@ class ParserEffects(ParserStrict):
 
 class ParserText(ParserStrict):
 
-    def _pos0_parse(self,data): # Posible values: 'reference','value','user'
+    def _pos0_parse(self,data): # Possible values: 'reference','value','user'
         if not isinstance(data,basestring):
             raise ValueError('expects atom')
         if data not in ('reference','value','user'):
@@ -83,9 +83,9 @@ class ParserLine(ParserStrict):
 class ParserModule(ParserStrict):
     _pos0_parse = parseAtom # first value to be an atom
     _parse1_layer = parseCopy1 # sub expression with one atom
-    _parse1_tedit = parseInt1 # sub expresssion with one integer value
-    _parse_fp_text = ParserText # composit expression
-    _parse_fp_line = ParserLine # composit expression
+    _parse1_tedit = parseInt1 # sub expression with one integer value
+    _parse_fp_text = ParserText # composite expression
+    _parse_fp_line = ParserLine # composite expression
 
     _parse_pad = SexpParser # Feel lazy? Don't check pad expression?
                             # Just let SexpParser handle the rest
@@ -99,7 +99,7 @@ class ParserModule(ParserStrict):
     # sub keys for that key we want for SexpList. Those sub keys can themselves
     # be a tuple.
     #
-    # You can create arbitary complex defaults, by using Sexp directly
+    # You can create arbitrary complex defaults, by using Sexp directly
     # as the default value(s). See the extreme example below. In most cases,
     # you'll be better off writing a subclass(es) to take care of its own
     # defaults
