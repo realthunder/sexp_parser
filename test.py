@@ -17,11 +17,18 @@ To parse an input file,
 from sexp_parser import *
 import sys
 import argparse
+from io import StringIO
+
+PY3 = sys.version_info[0] == 3
+if PY3:
+    string_types = str,
+else:
+    string_types = basestring,
 
 test_data = \
-'''
+r'''
 (module DIP-16_0 (layer F.Cu) (tedit 0)
-  (fp_text reference REF** (at -11.14 0 90) (layer F.SilkS)
+  (fp_text reference "REF \"**\"" (at -11.14 0 90) (layer F.SilkS)
     (effects (font (size 1.2 1.2) (thickness 0.15)))
   )
   (fp_text oops DIP-16_0 (at 0 0) (layer F.Fab)
@@ -39,7 +46,7 @@ test_data = \
 
 # Expression (at x y angle) can have the optional <angle>
 class ParserStrict(SexpParser):
-    def _parse(self,idx,data):
+    def _parse(self,idx,_data):
         raise KeyError('unknown key')
 
 class ParserFont(ParserStrict):
@@ -52,7 +59,7 @@ class ParserEffects(ParserStrict):
 class ParserText(ParserStrict):
 
     def _pos0_parse(self,data): # Possible values: 'reference','value','user'
-        if not isinstance(data,basestring):
+        if not isinstance(data,string_types):
             raise ValueError('expects atom')
         if data not in ('reference','value','user'):
             raise ValueError('unknown text value')
@@ -148,7 +155,10 @@ print('\nkeys: ')
 for k in module:
     print('\t{}: {}'.format(k,module[k]))
 
-print('\n')
+# test parsing quoted string
+quoted = module['fp_text'][0][1]
+print('\nquoted string: %s -> %s\n' % (quoted, unquote(quoted)))
+assert(unquote(quoted) == 'REF "**"')
+
+print('\nexport:')
 exportSexp(module,sys.stdout)
-
-
