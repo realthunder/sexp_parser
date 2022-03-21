@@ -1,7 +1,7 @@
 '''
 S-Expression parser written in Python
 
-This module provides a generic parser `SexpParser` that coverts a python
+This module provides a generic parser `SexpParser` that converts a python
 list-based S-Expression into a python object model.  Each expression in the
 list-based S-Expression is defined as a recursive ``list`` representation in
 the form of ::
@@ -737,12 +737,12 @@ _sexp_regex_quote_no_parse = re.compile(
             )''')
 
 def parseSexp(sexp, quote_no_parse=None):
-    """Parses S-expressions and return a ``list`` represention
+    """Parses S-expressions and return a ``list`` representation
 
         quote_no_parse: specify the first token of a S-expression to treat quote
-                        as normal characeter. It can either be a string or a
+                        as normal character. It can either be a string or a
                         compiled regular expression pattern. If it is '*', then
-                        it matchs all.
+                        it matches all.
 
         Code borrowed from: http://rosettacode.org/wiki/S-Expressions, with
         the following modifications,
